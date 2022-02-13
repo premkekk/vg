@@ -1,0 +1,1 @@
+[['AAPL', 'APPLE INC', 'Information Technology', 'Equity'],['MSFT', 'MICROSOFT CORP', 'Information Technology', 'Equity']]
