@@ -184,7 +184,7 @@ def storeSymbols():
             yquotetype = "N/A"
         insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + str(
             ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
-        print(insert_query)
+        #print(insert_query)
         dmlMySQLDB(insert_query)
 
         if sym == stopsymbol:
@@ -354,7 +354,6 @@ if __name__ == '__main__':
     configconnection()
     chkYfinance()
     cleanup()
-    exit()
     showAggregates()
     processPickleFile()
     storeSymbols()
