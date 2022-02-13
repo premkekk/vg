@@ -23,6 +23,13 @@ lstSyms = []
 connection_string = ""
 engine = ""
 startdate = ""
+stopsymbol = ""
+chksymbol = ""
+interval = ""
+mysqluser = ""
+mysqldb = ""
+mysqlhost = ""
+mysqlpoolsize = ""
 
 def configconnection():
     # Files used : config\vg.config
@@ -33,15 +40,15 @@ def configconnection():
 
     global connection_string
     global engine
+    global mysqluser
+    global mysqldb
+    global mysqlhost
 
     config = configparser.ConfigParser()
     config.sections()
     config.read('config\\vg.config')
     config.sections()
 
-    mysqluser = config['MYSQL']['MYSQLUSER']
-    mysqldb = config['MYSQL']['MYSQLDATABASE']
-    mysqlhost = config['MYSQL']['MYSQLHOST']
     decodedpwd = getcrypto()
 
     connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
@@ -73,13 +80,28 @@ def processPickleFile():
 
 
 def dmlMySQLDB(sql):
+    #Parameters
+    # sql: SQL query to be executed
+
+    #Returns
+    # sql result as cursor to the caller
+
+    global mysqluser
+    global mysqldb
+    global mysqlhost
+    global mysqlpoolsize
+
+    decodepwd = getcrypto()
+
+    #print (mysqluser)
+
     try:
         mysqlconnection = mysql.connector.connect(
-            host="localhost",
-            user="vguser",
-            password="vgpwd",
-            database="vgdb",
-            pool_size=7
+            host=mysqlhost,
+            user=mysqluser,
+            password=decodepwd,
+            database=mysqldb,
+            pool_size=mysqlpoolsize
         )
         curs = mysqlconnection.cursor(dictionary=True)
         curs.execute(sql)
@@ -107,6 +129,12 @@ def dmlMySQLDB(sql):
 
 
 def qryMySQLDB(sql):
+    #Parameters
+    # sql: SQL query to be executed
+
+    #Returns
+    # sql result set as dataframe object
+
     global engine
     try:
         sql_qry = pd.read_sql_query(sql, con=engine)
@@ -129,9 +157,12 @@ def qryMySQLDB(sql):
         return None
 
 
-# insert SYMBOLS into mysql table
 def storeSymbols():
-    print("INFO: About to store : {}".format(len(lstSyms)))
+    # Stores data into SYMBOLS table
+    # Fetches symbol info from yfinance (sym.info) and stores in table SYMBOLS
+    # This symbols info data can later be used for many computations
+
+    print("INFO: About to store symbols data : {}".format(len(lstSyms)))
     lstSyms.sort()
     for sym in lstSyms:
         ydata = yf.Ticker(sym)
@@ -144,7 +175,7 @@ def storeSymbols():
         else:
             yvolume = 0
         if "marketCap" in ydata.info:
-            ymktcap = ydata.info['marketCap']
+            ymarketcap = ydata.info['marketCap']
         else:
             ymarketcap = 0
         if "quoteType" in ydata.info:
@@ -155,28 +186,27 @@ def storeSymbols():
             ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
         print(insert_query)
         dmlMySQLDB(insert_query)
-        if sym == "CSO":
+
+        if sym == stopsymbol:
             break
 
 
 def getYfinanceData(psym, penddate):
     #Parameters:
     #psym : Symbol
-    #pstartdate : start date for history
     #penddate : end date for history
 
     #Returns:
-    #    dataframe with required history for symbol
+    # Dataframe with required history for symbol
+
+    # Uses YFinance API sym.history to get data between start and end date by interval.
+    # Interval is fetched from application configuration
 
     global startdate
 
     symdata = yf.Ticker(psym)
-    # enddt = row[0].strftime('%Y-%m-%d')
-    # print("Date:{}".format(enddt))
-    # get stock info
-    # sym.info
     # get historical market data
-    hist = symdata.history(start=startdate, end=penddate, interval="1d")
+    hist = symdata.history(start=startdate, end=penddate, interval=interval)
     return hist
 
 def storeYdata():
@@ -263,7 +293,8 @@ def cleanup():
     dsql = "truncate table vgdb.sectorweight"
     dmlMySQLDB(dsql)
 
-def showaggregates():
+
+def showAggregates():
     #Shows aggregates for all tables
     #Quick view of data
 
@@ -277,8 +308,21 @@ def showaggregates():
     df = qryMySQLDB(dsql)
     print(df)
 
-def setapplicationconfig():
+
+def setApplicationConfig():
+    #Reads configuration from config\vg.config file
+    #Sets configuration for application
+
     global startdate
+    global stopsymbol
+    global chksymbol
+    global interval
+
+    global mysqluser
+    global mysqldb
+    global mysqlhost
+    global mysqlpoolsize
+
 
     config = configparser.ConfigParser()
     config.sections()
@@ -286,20 +330,34 @@ def setapplicationconfig():
     config.sections()
 
     startdate = config['APPLICATION']['STARTDATE']
+    stopsymbol = config['APPLICATION']['STOPSYMBOL']
+    chksymbol = config['APPLICATION']['CHKSYMBOL']
+    interval = config['APPLICATION']['INTERVAL']
+
+    mysqluser = config['MYSQL']['MYSQLUSER']
+    mysqldb = config['MYSQL']['MYSQLDATABASE']
+    mysqlhost = config['MYSQL']['MYSQLHOST']
+    mysqlpoolsize = int(config['MYSQL']['MYSQLPOOLSIZE'])
 
 def chkYfinance():
+    #Function to check yfinance data
+
+    global chksymbol
+
     enddate = datetime.now().strftime('%Y-%m-%d')
-    dfhist = getYfinanceData("CSCO", enddate)
+    dfhist = getYfinanceData(chksymbol, enddate)
     print(dfhist)
 
+
 if __name__ == '__main__':
-    setapplicationconfig()
+    setApplicationConfig()
     configconnection()
     chkYfinance()
-    #cleanup()
-    showaggregates()
-    #processPickleFile()
-    #storeSymbols()
-    #storeYdata()
-    #calcSectorIndex()
+    cleanup()
+    exit()
+    showAggregates()
+    processPickleFile()
+    storeSymbols()
+    storeYdata()
+    calcSectorIndex()
 
