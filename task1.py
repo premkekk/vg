@@ -4,6 +4,7 @@ import sys
 import pickle
 
 import mysql.connector
+import sqlalchemy.util
 from mysql.connector import errorcode
 import pandas as pd
 from operator import itemgetter
@@ -20,10 +21,12 @@ lstSyms = []
 connection_string = "mysql+pymysql://%s:%s@%s/%s" % ("vguser", "vgpwd", "localhost", "vgdb")
 engine = create_engine(connection_string)
 
+
 def populateSyms(pListsyms):
     for sym in pListsyms:
         if sym not in lstSyms:
             lstSyms.append(sym)
+
 
 def processPickleFile():
     pickle_inputfile = os.path.abspath("D:\\projects\\vg\\c.pkl")
@@ -51,7 +54,7 @@ def dmlMySQLDB(sql):
         curs = mysqlconnection.cursor(dictionary=True)
         curs.execute(sql)
         mysqlconnection.commit()
-        #print("Executed : {}".format(sql))
+        # print("Executed : {}".format(sql))
         return curs
     except mysql.connector.Error as error:
         if error.errno == errorcode.ER_BAD_DB_ERROR:
@@ -72,19 +75,9 @@ def dmlMySQLDB(sql):
             mysqlconnection.close()
             # print("MySQL Connection is closed")
 
+
 def qryMySQLDB(sql):
     try:
-        """
-        mysqlconnection = mysql.connector.connect(
-            host="localhost",
-            user="vguser",
-            password="vgpwd",
-            database="vgdb",
-            pool_size=7
-        )
-        sql_qry = pd.read_sql_query(sql, mysqlconnection)
-        df = pd.DataFrame(sql_qry)
-        """
         sql_qry = pd.read_sql_query(sql, con=engine)
         df = pd.DataFrame(sql_qry)
         return df
@@ -103,6 +96,7 @@ def qryMySQLDB(sql):
     except ValueError as e:
         print(e)
         return None
+
 
 # insert SYMBOLS into mysql table
 def storeSymbols():
@@ -126,11 +120,13 @@ def storeSymbols():
             yquotetype = ydata.info['quoteType']
         else:
             yquotetype = "N/A"
-        insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + str(ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
+        insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + str(
+            ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
         print(insert_query)
         dmlMySQLDB(insert_query)
-        if sym == "AAPL":
+        if sym == "CSO":
             break
+
 
 def getYfinanceData(psym, penddate):
     symdata = yf.Ticker(psym)
@@ -148,10 +144,10 @@ def storeYdata():
     for sym in lstSyms:
         dfhist = getYfinanceData(sym, enddate)
         if len(dfhist) > 0:
-            #print(dfhist)
+            # print(dfhist)
             dfhist = dfhist.reset_index()
             for i in range(0, len(dfhist)):
-                #print("ROWDATA: sym:{}; i:{} ; date:{} ; col0:{} ; col1:{}".format(sym, i, dfhist.iloc[i]['Date'],
+                # print("ROWDATA: sym:{}; i:{} ; date:{} ; col0:{} ; col1:{}".format(sym, i, dfhist.iloc[i]['Date'],
                 #                                                                   dfhist.iloc[i]['Open'],
                 #                                                                   dfhist.iloc[i]['High']))
                 # sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE) values ('" + sym + "," + str(dfhist.iloc[i]['Date']) + "," + str(dfhist.iloc[i]['Open']) + ")"
@@ -161,21 +157,47 @@ def storeYdata():
                       str(dfhist.iloc[i]['Low']) + "," + str(dfhist.iloc[i]['Close']) + "," + str(
                     dfhist.iloc[i]['Volume']) + "," + \
                       str(dfhist.iloc[i]['Dividends']) + "," + str(dfhist.iloc[i]['Stock Splits']) + " )"
-                #print(sql)
+                # print(sql)
                 dmlMySQLDB(sql)
-        if sym == "AAPL":
+        if sym == "CSCO":
             break
 
+
 def calcSectorIndex():
-    i=0
-    sql = "SELECT distinct symbol, sector FROM SYMBOLS"
+    i = 0
+    sql = " SELECT distinct symbol, sector FROM SYMBOLS " \
+          " WHERE SECTOR != 'N/A'"
     df = qryMySQLDB(sql)
     print(df)
-    #for row in df.iterrows():
+    for sector in df['sector'].unique():
+        sql = " SELECT h.HISTDATE, s.SECTOR, count(h.symbol) as TOTALSYMBOLS, SUM(h.CLOSEPRICE) as TOTALCLOSEPRICE,  SUM(h.CLOSEPRICE)/count(h.symbol) as SECTORINDEXVALUE" \
+              " FROM vgdb.symbols s, vgdb.symhistory h" \
+              " WHERE s.symbol = h.symbol" \
+              " AND s.sector = '" + sector + "'" \
+              " GROUP BY h.HISTDATE, s.SECTOR"
+        sdf = qryMySQLDB(sql)
+        print(sdf)
 
+        isql = " INSERT INTO SECTORWEIGHT (DATE, SECTORNAME, TOTALCONSTITUENTS, SECTORPRICE, SECTORWINDEX) " \
+               " SELECT h.HISTDATE, s.SECTOR, count(h.symbol) as TOTALSYMBOLS, SUM(h.CLOSEPRICE) as TOTALCLOSEPRICE,  SUM(h.CLOSEPRICE)/count(h.symbol) as SECTORINDEXVALUE" \
+               " FROM vgdb.symbols s, vgdb.symhistory h" \
+               " WHERE s.symbol = h.symbol" \
+               " AND s.sector = '" + sector + "'" \
+               " GROUP BY h.HISTDATE, s.SECTOR"
+        sdf = dmlMySQLDB(isql)
+
+
+def cleanupdata():
+    dsql = "truncate table vgdb.symhistory"
+    dmlMySQLDB(dsql)
+    dsql = "truncate table vgdb.symbols"
+    dmlMySQLDB(dsql)
+    dsql = "truncate table vgdb.sectorweight"
+    dmlMySQLDB(dsql)
 
 if __name__ == '__main__':
-    #processPickleFile()
-    #storeSymbols()
-    #storeYdata()
+    cleanupdata()
+    processPickleFile()
+    storeSymbols()
+    storeYdata()
     calcSectorIndex()
