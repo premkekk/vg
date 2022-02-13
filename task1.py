@@ -22,8 +22,15 @@ from utils import *
 lstSyms = []
 connection_string = ""
 engine = ""
+startdate = ""
 
 def configconnection():
+    # Files used : config\vg.config
+    # Uses this configuration settings to create mysql connection
+    # Uses sqlalchemy package and create_engine modules
+    # sqlalchemy is performant than using mysql-connector
+    # sets global variables for connections
+
     global connection_string
     global engine
 
@@ -36,14 +43,16 @@ def configconnection():
     mysqldb = config['MYSQL']['MYSQLDATABASE']
     mysqlhost = config['MYSQL']['MYSQLHOST']
     decodedpwd = getcrypto()
-    print(decodedpwd)
 
     connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
     engine = create_engine(connection_string)
-    print(connection_string)
-    print(engine)
+    #print(connection_string)
+    #print(engine)
 
 def populateSyms(pListsyms):
+    # populate global list to ensure we have the universal symbols list
+    global lstSyms
+
     for sym in pListsyms:
         if sym not in lstSyms:
             lstSyms.append(sym)
@@ -151,17 +160,31 @@ def storeSymbols():
 
 
 def getYfinanceData(psym, penddate):
+    #Parameters:
+    #psym : Symbol
+    #pstartdate : start date for history
+    #penddate : end date for history
+
+    #Returns:
+    #    dataframe with required history for symbol
+
+    global startdate
+
     symdata = yf.Ticker(psym)
     # enddt = row[0].strftime('%Y-%m-%d')
     # print("Date:{}".format(enddt))
     # get stock info
     # sym.info
     # get historical market data
-    hist = symdata.history(start="2018-01-01", end=penddate, interval="1d")
+    hist = symdata.history(start=startdate, end=penddate, interval="1d")
     return hist
 
-
 def storeYdata():
+    #Uses yfinance API to get historical data for symbol and store this data in SYMHISTORY table
+    #Yfinance API tends to be slower, batch processing of symbols can be done if needed
+
+    global lstSyms
+
     enddate = datetime.now().strftime('%Y-%m-%d')
     if not lstSyms:
         qry = " SELECT DISTINCT SYMBOL FROM SYMBOLS ORDER BY 1"
@@ -177,30 +200,40 @@ def storeYdata():
             # print(dfhist)
             dfhist = dfhist.reset_index()
             for i in range(0, len(dfhist)):
-                # print("ROWDATA: sym:{}; i:{} ; date:{} ; col0:{} ; col1:{}".format(sym, i, dfhist.iloc[i]['Date'],
-                #                                                                   dfhist.iloc[i]['Open'],
-                #                                                                   dfhist.iloc[i]['High']))
-                # sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE) values ('" + sym + "," + str(dfhist.iloc[i]['Date']) + "," + str(dfhist.iloc[i]['Open']) + ")"
-                sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE, HIGHPRICE, LOWPRICE, CLOSEPRICE, VOLUME, DIVIDENDS, STOCKSPLITS) VALUES " \
-                      " ( '" + sym + "','" + str(dfhist.iloc[i]['Date']) + "'," + str(
-                    dfhist.iloc[i]['Open']) + "," + str(dfhist.iloc[i]['High']) + "," + \
-                      str(dfhist.iloc[i]['Low']) + "," + str(dfhist.iloc[i]['Close']) + "," + str(
-                    dfhist.iloc[i]['Volume']) + "," + \
-                      str(dfhist.iloc[i]['Dividends']) + "," + str(dfhist.iloc[i]['Stock Splits']) + " )"
                 # print(sql)
+                sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE, HIGHPRICE, LOWPRICE, CLOSEPRICE, VOLUME, DIVIDENDS, STOCKSPLITS) VALUES " \
+                      " ( '" + sym + "','" + str(dfhist.iloc[i]['Date']) + "'," + \
+                      str(dfhist.iloc[i]['Open']) + "," + str(dfhist.iloc[i]['High']) + "," + \
+                      str(dfhist.iloc[i]['Low']) + "," + str(dfhist.iloc[i]['Close']) + "," + \
+                      str(dfhist.iloc[i]['Volume']) + "," + \
+                      str(dfhist.iloc[i]['Dividends']) + "," + str(dfhist.iloc[i]['Stock Splits']) + " )"
                 dmlMySQLDB(sql)
 
 
 def calcSectorIndex():
+    # symhistory is the date wise yfinance data
+    # symbols is the symbols loaded from constituents file along with sector information loaded from yfinance
+    # Symbols table has symbol and sector information. We will use this to drive the sector calculation for performance improvements
+    # idea is symbols table will be used as a driver to calculate sector weighted index
+    # Doing equi join between symbols and symhistory tables.
+
+    # First cleanup sector weight index table
     dsql = "truncate table vgdb.sectorweight"
     dmlMySQLDB(dsql)
 
-    i = 0
+    # Create dataframe to store symbol to sector mapping
     sql = " SELECT distinct symbol, sector FROM SYMBOLS " \
           " WHERE SECTOR != 'N/A'"
     df = qryMySQLDB(sql)
-    print(df)
+    # print(df)
+
+    # Calculate sector price across all symbols from driver table and use this to calculate sector weight index
+    # This will then be inserted into the sectorweight table
+    # As this is a price weighted index, stock split are not handled. If this needs to be changed then it can be done by using stock split field from symhistory table as well
+    # Grouping across dates
+    # Note : Database queries would be more performant if date wise partition is created on symhistory table.
     for sector in df['sector'].unique():
+        """
         sql = " SELECT h.HISTDATE, s.SECTOR, count(h.symbol) as TOTALSYMBOLS, SUM(h.CLOSEPRICE) as TOTALCLOSEPRICE,  SUM(h.CLOSEPRICE)/count(h.symbol) as SECTORINDEXVALUE" \
               " FROM vgdb.symbols s, vgdb.symhistory h" \
               " WHERE s.symbol = h.symbol" \
@@ -208,6 +241,7 @@ def calcSectorIndex():
               " GROUP BY h.HISTDATE, s.SECTOR"
         sdf = qryMySQLDB(sql)
         print(sdf)
+        """
 
         isql = " INSERT INTO SECTORWEIGHT (DATE, SECTORNAME, TOTALCONSTITUENTS, SECTORPRICE, SECTORWINDEX) " \
                " SELECT h.HISTDATE, s.SECTOR, count(h.symbol) as TOTALSYMBOLS, SUM(h.CLOSEPRICE) as TOTALCLOSEPRICE,  SUM(h.CLOSEPRICE)/count(h.symbol) as SECTORINDEXVALUE" \
@@ -215,10 +249,13 @@ def calcSectorIndex():
                " WHERE s.symbol = h.symbol" \
                " AND s.sector = '" + sector + "'" \
                " GROUP BY h.HISTDATE, s.SECTOR"
-        sdf = dmlMySQLDB(isql)
+        dmlMySQLDB(isql)
 
 
 def cleanup():
+    #Performs DDL operations to cleanup tables
+    #Please make sure user has DDL permissions
+
     dsql = "truncate table vgdb.symhistory"
     dmlMySQLDB(dsql)
     dsql = "truncate table vgdb.symbols"
@@ -226,7 +263,10 @@ def cleanup():
     dsql = "truncate table vgdb.sectorweight"
     dmlMySQLDB(dsql)
 
-def showresults():
+def showaggregates():
+    #Shows aggregates for all tables
+    #Quick view of data
+
     dsql = "select count(*) from vgdb.symhistory"
     df = qryMySQLDB(dsql)
     print(df)
@@ -237,10 +277,27 @@ def showresults():
     df = qryMySQLDB(dsql)
     print(df)
 
+def setapplicationconfig():
+    global startdate
+
+    config = configparser.ConfigParser()
+    config.sections()
+    config.read('config\\vg.config')
+    config.sections()
+
+    startdate = config['APPLICATION']['STARTDATE']
+
+def chkYfinance():
+    enddate = datetime.now().strftime('%Y-%m-%d')
+    dfhist = getYfinanceData("CSCO", enddate)
+    print(dfhist)
+
 if __name__ == '__main__':
+    setapplicationconfig()
     configconnection()
+    chkYfinance()
     #cleanup()
-    showresults()
+    showaggregates()
     #processPickleFile()
     #storeSymbols()
     #storeYdata()
