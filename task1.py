@@ -13,14 +13,33 @@ import yfinance as yf
 from datetime import datetime
 from sqlalchemy import create_engine
 
+import configparser
 from collections import OrderedDict
 import numpy as np
 from matplotlib import pyplot as plt
+from utils import *
 
 lstSyms = []
-connection_string = "mysql+pymysql://%s:%s@%s/%s" % ("vguser", "vgpwd", "localhost", "vgdb")
-engine = create_engine(connection_string)
+connection_string = ""
+engine = ""
 
+def configconnection():
+    global connection_string
+    global engine
+
+    config = configparser.ConfigParser()
+    config.sections()
+    config.read('config\\vg.config')
+    config.sections()
+
+    mysqluser = config['MYSQL']['MYSQLUSER']
+    mysqldb = config['MYSQL']['MYSQLDATABASE']
+    mysqlhost = config['MYSQL']['MYSQLHOST']
+    decodedpwd = getcrypto()
+    print (decodedpwd)
+
+    connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
+    engine = create_engine(connection_string)
 
 def populateSyms(pListsyms):
     for sym in pListsyms:
@@ -77,6 +96,7 @@ def dmlMySQLDB(sql):
 
 
 def qryMySQLDB(sql):
+    global engine
     try:
         sql_qry = pd.read_sql_query(sql, con=engine)
         df = pd.DataFrame(sql_qry)
@@ -142,12 +162,14 @@ def getYfinanceData(psym, penddate):
 def storeYdata():
     enddate = datetime.now().strftime('%Y-%m-%d')
     if not lstSyms:
-        qry = " SELECT DISTINCT SYMBOL FROM SYMBOLS "
+        qry = " SELECT DISTINCT SYMBOL FROM SYMBOLS ORDER BY 1"
         df = qryMySQLDB(qry)
         lstSymsN = df['SYMBOL'].unique()
     else:
         lstSymsN = lstSyms
     for sym in lstSymsN:
+        #if sym == "AAL":
+        #    break
         dfhist = getYfinanceData(sym, enddate)
         if len(dfhist) > 0:
             # print(dfhist)
@@ -165,8 +187,6 @@ def storeYdata():
                       str(dfhist.iloc[i]['Dividends']) + "," + str(dfhist.iloc[i]['Stock Splits']) + " )"
                 # print(sql)
                 dmlMySQLDB(sql)
-        if sym == "CSCO":
-            break
 
 
 def calcSectorIndex():
@@ -196,7 +216,7 @@ def calcSectorIndex():
         sdf = dmlMySQLDB(isql)
 
 
-def cleanupdata():
+def cleanup():
     dsql = "truncate table vgdb.symhistory"
     dmlMySQLDB(dsql)
     dsql = "truncate table vgdb.symbols"
@@ -204,9 +224,23 @@ def cleanupdata():
     dsql = "truncate table vgdb.sectorweight"
     dmlMySQLDB(dsql)
 
+def showresults():
+    dsql = "select count(*) from vgdb.symhistory"
+    df = qryMySQLDB(dsql)
+    print(df)
+    dsql = "select count(*) from vgdb.symbols"
+    df = qryMySQLDB(dsql)
+    print(df)
+    dsql = "select count(*) from vgdb.sectorweight"
+    df = qryMySQLDB(dsql)
+    print(df)
+
 if __name__ == '__main__':
-    cleanupdata()
-    processPickleFile()
-    storeSymbols()
-    storeYdata()
-    calcSectorIndex()
+    configconnection()
+    #cleanup()
+    showresults()
+    #processPickleFile()
+    #storeSymbols()
+    #storeYdata()
+    #calcSectorIndex()
+
