@@ -10,18 +10,20 @@ from operator import itemgetter
 
 import yfinance as yf
 from datetime import datetime
+from sqlalchemy import create_engine
+
 from collections import OrderedDict
 import numpy as np
 from matplotlib import pyplot as plt
 
 lstSyms = []
-
+connection_string = "mysql+pymysql://%s:%s@%s/%s" % ("vguser", "vgpwd", "localhost", "vgdb")
+engine = create_engine(connection_string)
 
 def populateSyms(pListsyms):
     for sym in pListsyms:
         if sym not in lstSyms:
             lstSyms.append(sym)
-
 
 def processPickleFile():
     pickle_inputfile = os.path.abspath("D:\\projects\\vg\\c.pkl")
@@ -72,6 +74,7 @@ def dmlMySQLDB(sql):
 
 def qryMySQLDB(sql):
     try:
+        """
         mysqlconnection = mysql.connector.connect(
             host="localhost",
             user="vguser",
@@ -80,6 +83,9 @@ def qryMySQLDB(sql):
             pool_size=7
         )
         sql_qry = pd.read_sql_query(sql, mysqlconnection)
+        df = pd.DataFrame(sql_qry)
+        """
+        sql_qry = pd.read_sql_query(sql, con=engine)
         df = pd.DataFrame(sql_qry)
         return df
     except mysql.connector.Error as error:
@@ -97,9 +103,6 @@ def qryMySQLDB(sql):
     except ValueError as e:
         print(e)
         return None
-    finally:
-        if mysqlconnection.is_connected():
-            mysqlconnection.close()
 
 # insert SYMBOLS into mysql table
 def storeSymbols():
@@ -168,6 +171,8 @@ def calcSectorIndex():
     sql = "SELECT distinct symbol, sector FROM SYMBOLS"
     df = qryMySQLDB(sql)
     print(df)
+    #for row in df.iterrows():
+
 
 if __name__ == '__main__':
     #processPickleFile()

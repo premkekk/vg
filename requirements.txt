@@ -17,3 +17,5 @@ xlrd>=2.0.1
 openpyxl>=3.0.9
 matplotlib>=3.5.1
 sqlalchemy>=1.4.31
+yfinance>=0.1.70
+pymysql>=1.0.2
