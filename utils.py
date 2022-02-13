@@ -7,5 +7,5 @@ def getcrypto():
     print("key {}".format(nkey))
     print("token {}".format(ntoken))
     fn = Fernet(nkey)
-    return fn.decrypt(ntoken)
+    return fn.decrypt(ntoken).decode("utf-8")
 

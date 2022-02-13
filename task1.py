@@ -4,7 +4,6 @@ import sys
 import pickle
 
 import mysql.connector
-import sqlalchemy.util
 from mysql.connector import errorcode
 import pandas as pd
 from operator import itemgetter
@@ -12,6 +11,7 @@ from operator import itemgetter
 import yfinance as yf
 from datetime import datetime
 from sqlalchemy import create_engine
+import sqlalchemy.util
 
 import configparser
 from collections import OrderedDict
@@ -36,10 +36,12 @@ def configconnection():
     mysqldb = config['MYSQL']['MYSQLDATABASE']
     mysqlhost = config['MYSQL']['MYSQLHOST']
     decodedpwd = getcrypto()
-    print (decodedpwd)
+    print(decodedpwd)
 
     connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
     engine = create_engine(connection_string)
+    print(connection_string)
+    print(engine)
 
 def populateSyms(pListsyms):
     for sym in pListsyms:
