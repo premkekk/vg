@@ -141,7 +141,13 @@ def getYfinanceData(psym, penddate):
 
 def storeYdata():
     enddate = datetime.now().strftime('%Y-%m-%d')
-    for sym in lstSyms:
+    if not lstSyms:
+        qry = " SELECT DISTINCT SYMBOL FROM SYMBOLS "
+        df = qryMySQLDB(qry)
+        lstSymsN = df['SYMBOL'].unique()
+    else:
+        lstSymsN = lstSyms
+    for sym in lstSymsN:
         dfhist = getYfinanceData(sym, enddate)
         if len(dfhist) > 0:
             # print(dfhist)
@@ -164,6 +170,9 @@ def storeYdata():
 
 
 def calcSectorIndex():
+    dsql = "truncate table vgdb.sectorweight"
+    dmlMySQLDB(dsql)
+
     i = 0
     sql = " SELECT distinct symbol, sector FROM SYMBOLS " \
           " WHERE SECTOR != 'N/A'"
