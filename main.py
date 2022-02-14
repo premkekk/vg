@@ -17,9 +17,12 @@ from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+
+import utils
 from utils import *
 import initvar
 import subprocess
+
 
 def configconnection():
     # Files used : config\vg.config
@@ -39,30 +42,23 @@ def configconnection():
     config.read('config\\vg.config')
     config.sections()
 
-    decodedpwd = getcrypto()
+    decodedpwd = utils.getuserpwd()
 
     connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
     engine = create_engine(connection_string)
-    #print(connection_string)
-    #print(engine)
+    # print(connection_string)
+    # print(engine)
+
 
 def populateSyms(pListsyms):
     # populate global list to ensure we have the universal symbols list
-    global lstSyms
-    global appsymbolslist
+    # global lstSyms
 
     for sym in pListsyms:
-        if sym not in lstSyms:
+        if not lstSyms:
             lstSyms.append(sym)
-
-    """                    
-    for sym in appsymbolslist:
-        if sym not in lstSyms:
-                lstSyms.append(sym)
-    return
-
-    if appsymbolslist == "ALL":
-    """
+        elif sym not in lstSyms:
+            lstSyms.append(sym)
 
 def processPickleFile():
     global appsymbolslist
@@ -73,9 +69,9 @@ def processPickleFile():
 
     if len(appsymbolslist) == 1 and appsymbolslist[0] == "ALL":
         for row in unpickled.itertuples(name='SymData'):
-            #row[0] is date
-            #row[1] is symbol constituent data
-            #extract symbol from this list by using itemgetter - first column in list, so index is 0
+            # row[0] is date
+            # row[1] is symbol constituent data
+            # extract symbol from this list by using itemgetter - first column in list, so index is 0
             symDataList = row[1]
             if symDataList:
                 l_listsymbols = list(map(itemgetter(0), symDataList))
@@ -88,10 +84,10 @@ def processPickleFile():
 
 
 def dmlMySQLDB(sql):
-    #Parameters
+    # Parameters
     # sql: SQL query to be executed
 
-    #Returns
+    # Returns
     # sql result as cursor to the caller
 
     global mysqluser
@@ -99,9 +95,9 @@ def dmlMySQLDB(sql):
     global mysqlhost
     global mysqlpoolsize
 
-    decodepwd = getcrypto()
+    decodepwd = utils.getuserpwd()
 
-    #print (mysqluser)
+    # print (mysqluser)
 
     try:
         mysqlconnection = mysql.connector.connect(
@@ -137,13 +133,13 @@ def dmlMySQLDB(sql):
 
 
 def qryMySQLDB(sql):
-    #Parameters
+    # Parameters
     # sql: SQL query to be executed
 
-    #Returns
+    # Returns
     # sql result set as dataframe object
 
-    #global engine
+    # global engine
     try:
         sql_qry = pd.read_sql_query(sql, con=engine)
         df = pd.DataFrame(sql_qry)
@@ -196,7 +192,7 @@ def storeSymbols():
 
         insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + str(
             ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
-        #print(insert_query)
+        # print(insert_query)
         dmlMySQLDB(insert_query)
 
         if sym == stopsymbol:
@@ -204,11 +200,11 @@ def storeSymbols():
 
 
 def getYfinanceData(psym, penddate):
-    #Parameters:
-    #psym : Symbol
-    #penddate : end date for history
+    # Parameters:
+    # psym : Symbol
+    # penddate : end date for history
 
-    #Returns:
+    # Returns:
     # Dataframe with required history for symbol
 
     # Uses YFinance API sym.history to get data between start and end date by interval.
@@ -221,9 +217,10 @@ def getYfinanceData(psym, penddate):
     hist = symdata.history(start=startdate, end=penddate, interval=interval)
     return hist
 
+
 def storeYdata():
-    #Uses yfinance API to get historical data for symbol and store this data in SYMHISTORY table
-    #Yfinance API tends to be slower, batch processing of symbols can be done if needed
+    # Uses yfinance API to get historical data for symbol and store this data in SYMHISTORY table
+    # Yfinance API tends to be slower, batch processing of symbols can be done if needed
 
     global lstSyms
 
@@ -246,7 +243,7 @@ def storeYdata():
             for i in range(0, len(dfhist)):
                 # print(sql)
 
-                #skip bad data from Yfinance. some cases openprice is coming in as NaN. e.g. AAPL 2018-02-09
+                # skip bad data from Yfinance. some cases openprice is coming in as NaN. e.g. AAPL 2018-02-09
                 if dfhist.iloc[i]['Open'] > 0:
                     sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE, HIGHPRICE, LOWPRICE, CLOSEPRICE, VOLUME, DIVIDENDS, STOCKSPLITS) VALUES " \
                           " ( '" + sym + "','" + str(dfhist.iloc[i]['Date']) + "'," + \
@@ -295,25 +292,28 @@ def calcSectorIndex():
                " FROM vgdb.symbols s, vgdb.symhistory h" \
                " WHERE s.symbol = h.symbol" \
                " AND s.sector = '" + sector + "'" \
-               " GROUP BY h.HISTDATE, s.SECTOR"
+                                              " GROUP BY h.HISTDATE, s.SECTOR"
         dmlMySQLDB(isql)
 
 
 def cleanup():
-    #Performs DDL operations to cleanup tables
-    #Please make sure user has DDL permissions
+    # Performs DDL operations to cleanup tables
+    # Please make sure user has DDL permissions
 
-    dsql = "truncate table vgdb.symhistory"
-    dmlMySQLDB(dsql)
-    dsql = "truncate table vgdb.symbols"
-    dmlMySQLDB(dsql)
-    dsql = "truncate table vgdb.sectorweight"
-    dmlMySQLDB(dsql)
+    global freshrun
+
+    if freshrun == "Y":
+        dsql = "truncate table vgdb.symhistory"
+        dmlMySQLDB(dsql)
+        dsql = "truncate table vgdb.symbols"
+        dmlMySQLDB(dsql)
+        dsql = "truncate table vgdb.sectorweight"
+        dmlMySQLDB(dsql)
 
 
 def showAggregates():
-    #Shows aggregates for all tables
-    #Quick view of data
+    # Shows aggregates for all tables
+    # Quick view of data
 
     printLineSeparator()
     dsql = "select 'SYMBOLS' as TableName, count(*) as NumberOfRows  from vgdb.symbols"
@@ -333,8 +333,8 @@ def showAggregates():
 
 
 def setApplicationConfig():
-    #Reads configuration from config\vg.config file
-    #Sets configuration for application
+    # Reads configuration from config\vg.config file
+    # Sets configuration for application
 
     global startdate
     global stopsymbol
@@ -345,66 +345,146 @@ def setApplicationConfig():
     global mysqldb
     global mysqlhost
     global mysqlpoolsize
+    global mysqlexepath
     global appsymbolslist
-
+    global lstrootcommand
+    global mysqlrootpwd
+    global freshrun
+    global lstSyms
 
     config = configparser.ConfigParser()
     config.sections()
     config.read('config\\vg.config')
     config.sections()
 
-    #store application configurations
+    # store application configurations
     startdate = config['APPLICATION']['STARTDATE']
     stopsymbol = config['APPLICATION']['STOPSYMBOL']
     chksymbol = config['APPLICATION']['CHKSYMBOL']
     interval = config['APPLICATION']['INTERVAL']
     appsymbolslist = config['APPLICATION']['SYMBOLSLIST'].split(',')
+    freshrun = config['APPLICATION']['FRESHRUN']
+    lstSyms = []
 
-    #store mysql database configurations
+    # store mysql database configurations
     mysqluser = config['MYSQL']['MYSQLUSER']
     mysqldb = config['MYSQL']['MYSQLDATABASE']
     mysqlhost = config['MYSQL']['MYSQLHOST']
+    mysqlexepath = config['MYSQL']['MYSQLEXEPATH']
     mysqlpoolsize = int(config['MYSQL']['MYSQLPOOLSIZE'])
+    mysqlrootpwd = utils.getrootpwd()
+    rootpwdcmd = "-p" + mysqlrootpwd
+    lstrootcommand = [mysqlexepath, "-uroot", rootpwdcmd]
 
-    #set dataframe to print all columns
+    # set dataframe to print all columns
     pd.set_option('display.max_columns', None)
 
 
 def createDatabase():
-    global mysqluser
+    #Creates new database
+    #If database exists will skip creating new database
+
     global mysqldb
     global mysqlhost
-    global mysqlpoolsize
+    global lstrootcommand
+    global mysqlrootpwd
 
-    decodedpwd = getcrypto()
+    try:
+        mysqlconnection = mysql.connector.connect(
+            host=mysqlhost,
+            user="root",
+            password=mysqlrootpwd
+        )
+        curs = mysqlconnection.cursor(dictionary=True)
+        curs.execute("SHOW DATABASES")
+
+        for x in curs:
+            if x["Database"] == mysqldb:
+                print("Skipping creating database '{}' as it already exists".format(mysqldb))
+                return
+
+    except mysql.connector.Error as error:
+        if error.errno == errorcode.ER_BAD_DB_ERROR:
+            print('ERROR : Database does not exist. Please verify connection string.')
+        elif error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print('ERROR : Please verify your credentials to connect to the database')
+        else:
+            print("ERROR: Cannot connect to mysql : {} ".format(error))
+    except TypeError as e:
+        print(e)
+        return None
+    except ValueError as e:
+        print(e)
+        return None
+    finally:
+        if mysqlconnection.is_connected():
+            curs.close()
+            mysqlconnection.close()
 
     with open('sqlscripts/createDatabase.sql') as input_file:
-        result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
+        result = subprocess.run(lstrootcommand, stdin=input_file, capture_output=True)
         print(result)
+
 
 def createUser():
-    global mysqluser
-    global mysqldb
-    global mysqlhost
-    global mysqlpoolsize
+    #Creates new user
+    #If user exists will skip creating new user
 
-    decodedpwd = getcrypto()
+    global mysqluser
+    global mysqlhost
+    global lstrootcommand
+    global mysqlrootpwd
+
+    try:
+        mysqlconnection = mysql.connector.connect(
+            host=mysqlhost,
+            user="root",
+            password=mysqlrootpwd
+        )
+        curs = mysqlconnection.cursor(dictionary=True)
+        curs.execute("select user from mysql.user")
+
+        for x in curs:
+            if x["user"] == mysqluser:
+                print("Skipping creating user '{}' as it already exists".format(mysqluser))
+                return
+
+    except mysql.connector.Error as error:
+        if error.errno == errorcode.ER_BAD_DB_ERROR:
+            print('ERROR : Database does not exist. Please verify connection string.')
+        elif error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print('ERROR : Please verify your credentials to connect to the database')
+        else:
+            print("ERROR: Cannot connect to mysql : {} ".format(error))
+    except TypeError as e:
+        print(e)
+        return None
+    except ValueError as e:
+        print(e)
+        return None
+    finally:
+        if mysqlconnection.is_connected():
+            curs.close()
+            mysqlconnection.close()
 
     with open('sqlscripts/createUser.sql') as input_file:
-        result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
+        result = subprocess.run(lstrootcommand, stdin=input_file, capture_output=True)
         print(result)
+
 
 def createTables():
-    global mysqluser
+    #Creates new tables required for this project
+    #If tables exists will skip creating tables
+
     global mysqldb
     global mysqlhost
-    global mysqlpoolsize
-
-    decodedpwd = getcrypto()
+    global mysqlexepath
+    global lstrootcommand
 
     with open('sqlscripts/createTables.sql') as input_file:
-        result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
+        result = subprocess.run(lstrootcommand, stdin=input_file, capture_output=True)
         print(result)
+
 
 def showgraph():
     # , SECTORWINDEX, TOTALCONSTITUENTS
@@ -431,13 +511,14 @@ def showgraph():
     plt.legend()
     plt.show()
 
+
 def show3dgraph():
     sql = " SELECT left(DATE,10) as DATE, SECTORNAME, SECTORWINDEX " \
           " FROM SECTORWEIGHT " \
           " ORDER BY 1 DESC"
 
     df = qryMySQLDB(sql)
-    #df = df.reset_index()
+    # df = df.reset_index()
 
     lstDt = df['DATE'].tolist()
     lstSec = df['SECTORNAME'].tolist()
@@ -462,21 +543,25 @@ def show3dgraph():
 
 
 if __name__ == '__main__':
-    #createDatabase()
-    #createUser()
-    #createTables()
 
     setApplicationConfig()
+
+    createDatabase()
+    createUser()
+    createTables()
+
     configconnection()
 
-    #cleanup()
+    cleanup()
+
     processPickleFile()
-    exit()
+
     storeSymbols()
     storeYdata()
-    calcSectorIndex()
-    showAggregates()
 
+    calcSectorIndex()
+
+    showAggregates()
     showgraph()
     show3dgraph()
 

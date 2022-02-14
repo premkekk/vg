@@ -8,5 +8,10 @@ mysqluser = ""
 mysqldb = ""
 mysqlhost = ""
 mysqlpoolsize = ""
-lstSyms = []
 appsymbolslist = ""
+mysqlexepath = ""
+lstrootcommand = []
+mysqlrootpwd = ""
+freshrun = ""
+lstSyms = []
+

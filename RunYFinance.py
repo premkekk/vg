@@ -28,6 +28,10 @@ def getYfinanceData(psym, penddate):
 
 def chkYfinance():
     #Function to check yfinance data
+    #start date is from configuration file vg.config - property ['APPLICATION']['STARTDATE']
+    #symbol is from configuration file vg.config - property ['APPLICATION']['CHKSYMBOL']
+    #interval is from configuration file vg.config - property ['APPLICATION']['INTERVAL']
+    #end date is set to current date
 
     global chksymbol
 
@@ -60,6 +64,8 @@ def setApplicationConfig():
     chksymbol = config['APPLICATION']['CHKSYMBOL']
     interval = config['APPLICATION']['INTERVAL']
 
+    #set to 8 columns to allow to print all columns
+    pd.set_option('display.max_columns', None)
 
 if __name__ == '__main__':
     setApplicationConfig()

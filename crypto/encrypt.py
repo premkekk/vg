@@ -4,17 +4,17 @@ from cryptography.fernet import Fernet
 key = Fernet.generate_key()
 f = Fernet(key)
 #encrypt message and generate token message
-token = f.encrypt(b"vgpwd")
+token = f.encrypt(b"root")
 print(key)
 print(token)
 
 # open key and token files for writing
-open("crypto_fernet.key", "wb").write(key)
-open("crypto_fernet.token", "wb").write(token)
+open("crypto_fernet.root.key", "wb").write(key)
+open("crypto_fernet.root.token", "wb").write(token)
 
 # read key and token back
-nkey = open("crypto_fernet.key", "rb").read()
-ntoken = open("crypto_fernet.token", "rb").read()
+nkey = open("crypto_fernet.root.key", "rb").read()
+ntoken = open("crypto_fernet.root.token", "rb").read()
 
 print("key {}".format(nkey))
 print("token {}".format(ntoken))
