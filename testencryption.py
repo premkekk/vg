@@ -26,6 +26,8 @@ def configconnection():
     mysqluser = config['MYSQL']['MYSQLUSER']
     mysqldb = config['MYSQL']['MYSQLDATABASE']
     mysqlhost = config['MYSQL']['MYSQLHOST']
+
+    # call get crypto
     decodedpwd = getcrypto()
 
     print("decrypted string: ", decodedpwd)

@@ -9,3 +9,5 @@ def getcrypto():
     fn = Fernet(nkey)
     return fn.decrypt(ntoken).decode("utf-8")
 
+def printLineSeparator():
+    print("-------------------------------------------------------------------------------------------------------------------------------------")

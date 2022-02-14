@@ -1,6 +1,4 @@
-# part 1
 import os
-from os import system
 import sys
 import pickle
 
@@ -20,8 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from utils import *
-from initvar import *
-from subprocess import Popen, PIPE
+import initvar
 import subprocess
 
 def configconnection():
@@ -70,7 +67,7 @@ def populateSyms(pListsyms):
 def processPickleFile():
     global appsymbolslist
 
-    pickle_inputfile = os.path.abspath("D:\\projects\\vg\\c.pkl")
+    pickle_inputfile = os.path.abspath("data\\constituents_history.pkl")
     pickle_file = open(pickle_inputfile, "rb")
     unpickled = pickle.load(pickle_file)
 
@@ -314,9 +311,6 @@ def cleanup():
     dmlMySQLDB(dsql)
 
 
-def printLineSeparator():
-    print("-----------------------------------------------------------------------------------------------")
-
 def showAggregates():
     #Shows aggregates for all tables
     #Quick view of data
@@ -372,19 +366,9 @@ def setApplicationConfig():
     mysqlhost = config['MYSQL']['MYSQLHOST']
     mysqlpoolsize = int(config['MYSQL']['MYSQLPOOLSIZE'])
 
-def chkYfinance():
-    #Function to check yfinance data
+    #set dataframe to print all columns
+    pd.set_option('display.max_columns', None)
 
-    global chksymbol
-
-    enddate = datetime.now().strftime('%Y-%m-%d')
-    dfhist = getYfinanceData(chksymbol, enddate)
-
-    printLineSeparator()
-    print("Check YFinance data for {}".format(chksymbol))
-    printLineSeparator()
-    print(dfhist)
-    printLineSeparator()
 
 def createDatabase():
     global mysqluser
@@ -485,9 +469,9 @@ if __name__ == '__main__':
     setApplicationConfig()
     configconnection()
 
-    chkYfinance()
-    cleanup()
+    #cleanup()
     processPickleFile()
+    exit()
     storeSymbols()
     storeYdata()
     calcSectorIndex()
