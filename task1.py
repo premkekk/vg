@@ -17,7 +17,8 @@ import sqlalchemy.util
 import configparser
 from collections import OrderedDict
 import numpy as np
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 from utils import *
 from initvar import *
 from subprocess import Popen, PIPE
@@ -67,12 +68,17 @@ def populateSyms(pListsyms):
     """
 
 def processPickleFile():
+    global appsymbolslist
+
     pickle_inputfile = os.path.abspath("D:\\projects\\vg\\c.pkl")
     pickle_file = open(pickle_inputfile, "rb")
-    up = pickle.load(pickle_file)
+    unpickled = pickle.load(pickle_file)
 
-    if appsymbolslist == "ALL":
-        for row in up.itertuples(name='SymData'):
+    if len(appsymbolslist) == 1 and appsymbolslist[0] == "ALL":
+        for row in unpickled.itertuples(name='SymData'):
+            #row[0] is date
+            #row[1] is symbol constituent data
+            #extract symbol from this list by using itemgetter - first column in list, so index is 0
             symDataList = row[1]
             if symDataList:
                 l_listsymbols = list(map(itemgetter(0), symDataList))
@@ -416,10 +422,65 @@ def createTables():
         result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
         print(result)
 
+def showgraph():
+    # , SECTORWINDEX, TOTALCONSTITUENTS
+    sql = " SELECT DATE, COUNT(SECTORNAME) AS SECTORNAME, SUM(SECTORWINDEX)  as SECTORWINDEX, SUM(TOTALCONSTITUENTS) AS TOTALCONSTITUENTS " \
+          " FROM SECTORWEIGHT " \
+          " GROUP BY DATE ORDER BY 1 DESC"
+
+    df = qryMySQLDB(sql)
+    df = df.reset_index()
+
+    lstDt = df['DATE'].tolist()
+    lstSec = df['SECTORNAME'].tolist()
+    lstSecWIndex = df['SECTORWINDEX'].tolist()
+    lstConstituents = df['TOTALCONSTITUENTS'].tolist()
+
+    plt.plot(lstDt, lstSecWIndex, label="Sector Weighted Index")
+
+    plt.plot(lstDt, lstSec, label="Sectors")
+
+    plt.plot(lstDt, lstConstituents, label="Total Constituents")
+
+    plt.xlabel('x - date')
+    plt.ylabel('y - axis')
+    plt.legend()
+    plt.show()
+
+def show3dgraph():
+    sql = " SELECT left(DATE,10) as DATE, SECTORNAME, SECTORWINDEX " \
+          " FROM SECTORWEIGHT " \
+          " ORDER BY 1 DESC"
+
+    df = qryMySQLDB(sql)
+    #df = df.reset_index()
+
+    lstDt = df['DATE'].tolist()
+    lstSec = df['SECTORNAME'].tolist()
+    lstSecWIndex = df['SECTORWINDEX'].tolist()
+
+    fig = plt.figure()
+
+    # set 3-D projection
+    ax = plt.axes(projection='3d')
+
+    # define all 3 axes
+    yn = range(len(lstSec))
+    y = yn
+    xn = range(len(lstDt))
+    x = xn
+    z = lstSecWIndex
+
+    # plott axis
+    ax.plot3D(x, y, z, 'blue')
+    ax.set_title('3D Date vs Sector vs Index')
+    plt.show()
+
+
 if __name__ == '__main__':
-    createDatabase()
-    createUser()
-    createTables()
+    #createDatabase()
+    #createUser()
+    #createTables()
 
     setApplicationConfig()
     configconnection()
@@ -431,4 +492,8 @@ if __name__ == '__main__':
     storeYdata()
     calcSectorIndex()
     showAggregates()
+
+    showgraph()
+    show3dgraph()
+
     exit()
