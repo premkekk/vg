@@ -1,5 +1,6 @@
 # part 1
 import os
+from os import system
 import sys
 import pickle
 
@@ -19,6 +20,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from utils import *
 from initvar import *
+from subprocess import Popen, PIPE
+import subprocess
 
 def configconnection():
     # Files used : config\vg.config
@@ -377,10 +380,50 @@ def chkYfinance():
     print(dfhist)
     printLineSeparator()
 
+def createDatabase():
+    global mysqluser
+    global mysqldb
+    global mysqlhost
+    global mysqlpoolsize
+
+    decodedpwd = getcrypto()
+
+    with open('sqlscripts/createDatabase.sql') as input_file:
+        result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
+        print(result)
+
+def createUser():
+    global mysqluser
+    global mysqldb
+    global mysqlhost
+    global mysqlpoolsize
+
+    decodedpwd = getcrypto()
+
+    with open('sqlscripts/createUser.sql') as input_file:
+        result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
+        print(result)
+
+def createTables():
+    global mysqluser
+    global mysqldb
+    global mysqlhost
+    global mysqlpoolsize
+
+    decodedpwd = getcrypto()
+
+    with open('sqlscripts/createTables.sql') as input_file:
+        result = subprocess.run(['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], stdin=input_file, capture_output=True)
+        print(result)
 
 if __name__ == '__main__':
+    createDatabase()
+    createUser()
+    createTables()
+
     setApplicationConfig()
     configconnection()
+
     chkYfinance()
     cleanup()
     processPickleFile()
