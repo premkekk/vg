@@ -18,18 +18,7 @@ from collections import OrderedDict
 import numpy as np
 from matplotlib import pyplot as plt
 from utils import *
-
-lstSyms = []
-connection_string = ""
-engine = ""
-startdate = ""
-stopsymbol = ""
-chksymbol = ""
-interval = ""
-mysqluser = ""
-mysqldb = ""
-mysqlhost = ""
-mysqlpoolsize = ""
+from initvar import *
 
 def configconnection():
     # Files used : config\vg.config
@@ -59,24 +48,37 @@ def configconnection():
 def populateSyms(pListsyms):
     # populate global list to ensure we have the universal symbols list
     global lstSyms
+    global appsymbolslist
 
     for sym in pListsyms:
         if sym not in lstSyms:
             lstSyms.append(sym)
 
+    """                    
+    for sym in appsymbolslist:
+        if sym not in lstSyms:
+                lstSyms.append(sym)
+    return
+
+    if appsymbolslist == "ALL":
+    """
 
 def processPickleFile():
     pickle_inputfile = os.path.abspath("D:\\projects\\vg\\c.pkl")
     pickle_file = open(pickle_inputfile, "rb")
     up = pickle.load(pickle_file)
-    for row in up.itertuples(name='SymData'):
-        symDataList = row[1]
-        if symDataList:
-            l_listsymbols = list(map(itemgetter(0), symDataList))
-            populateSyms(l_listsymbols)
-            # symAssetClass=list(map(itemgetter(3), symDataList))
-            # print("Row:{} ; Date:{}; Symbols:{}; AssetClass :{}".format( r, row[0], syms, symAssetClass ) )
-            # datetime.strptime(row[0],'%Y-%m-%d %H:%M:%S')
+
+    if appsymbolslist == "ALL":
+        for row in up.itertuples(name='SymData'):
+            symDataList = row[1]
+            if symDataList:
+                l_listsymbols = list(map(itemgetter(0), symDataList))
+                populateSyms(l_listsymbols)
+                # symAssetClass=list(map(itemgetter(3), symDataList))
+                # print("Row:{} ; Date:{}; Symbols:{}; AssetClass :{}".format( r, row[0], syms, symAssetClass ) )
+                # datetime.strptime(row[0],'%Y-%m-%d %H:%M:%S')
+    else:
+        populateSyms(appsymbolslist)
 
 
 def dmlMySQLDB(sql):
@@ -135,7 +137,7 @@ def qryMySQLDB(sql):
     #Returns
     # sql result set as dataframe object
 
-    global engine
+    #global engine
     try:
         sql_qry = pd.read_sql_query(sql, con=engine)
         df = pd.DataFrame(sql_qry)
@@ -164,8 +166,11 @@ def storeSymbols():
 
     print("INFO: About to store symbols data : {}".format(len(lstSyms)))
     lstSyms.sort()
+
     for sym in lstSyms:
+
         ydata = yf.Ticker(sym)
+
         if "sector" in ydata.info:
             ysector = ydata.info['sector']
         else:
@@ -182,6 +187,7 @@ def storeSymbols():
             yquotetype = ydata.info['quoteType']
         else:
             yquotetype = "N/A"
+
         insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + str(
             ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
         #print(insert_query)
@@ -216,28 +222,33 @@ def storeYdata():
     global lstSyms
 
     enddate = datetime.now().strftime('%Y-%m-%d')
+
     if not lstSyms:
         qry = " SELECT DISTINCT SYMBOL FROM SYMBOLS ORDER BY 1"
         df = qryMySQLDB(qry)
         lstSymsN = df['SYMBOL'].unique()
     else:
         lstSymsN = lstSyms
+
     for sym in lstSymsN:
-        #if sym == "AAL":
-        #    break
+        if sym == stopsymbol:
+            break
         dfhist = getYfinanceData(sym, enddate)
         if len(dfhist) > 0:
             # print(dfhist)
             dfhist = dfhist.reset_index()
             for i in range(0, len(dfhist)):
                 # print(sql)
-                sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE, HIGHPRICE, LOWPRICE, CLOSEPRICE, VOLUME, DIVIDENDS, STOCKSPLITS) VALUES " \
-                      " ( '" + sym + "','" + str(dfhist.iloc[i]['Date']) + "'," + \
-                      str(dfhist.iloc[i]['Open']) + "," + str(dfhist.iloc[i]['High']) + "," + \
-                      str(dfhist.iloc[i]['Low']) + "," + str(dfhist.iloc[i]['Close']) + "," + \
-                      str(dfhist.iloc[i]['Volume']) + "," + \
-                      str(dfhist.iloc[i]['Dividends']) + "," + str(dfhist.iloc[i]['Stock Splits']) + " )"
-                dmlMySQLDB(sql)
+
+                #skip bad data from Yfinance. some cases openprice is coming in as NaN. e.g. AAPL 2018-02-09
+                if dfhist.iloc[i]['Open'] > 0:
+                    sql = "INSERT INTO SYMHISTORY (SYMBOL, HISTDATE, OPENPRICE, HIGHPRICE, LOWPRICE, CLOSEPRICE, VOLUME, DIVIDENDS, STOCKSPLITS) VALUES " \
+                          " ( '" + sym + "','" + str(dfhist.iloc[i]['Date']) + "'," + \
+                          str(dfhist.iloc[i]['Open']) + "," + str(dfhist.iloc[i]['High']) + "," + \
+                          str(dfhist.iloc[i]['Low']) + "," + str(dfhist.iloc[i]['Close']) + "," + \
+                          str(dfhist.iloc[i]['Volume']) + "," + \
+                          str(dfhist.iloc[i]['Dividends']) + "," + str(dfhist.iloc[i]['Stock Splits']) + " )"
+                    dmlMySQLDB(sql)
 
 
 def calcSectorIndex():
@@ -294,19 +305,28 @@ def cleanup():
     dmlMySQLDB(dsql)
 
 
+def printLineSeparator():
+    print("-----------------------------------------------------------------------------------------------")
+
 def showAggregates():
     #Shows aggregates for all tables
     #Quick view of data
 
-    dsql = "select count(*) from vgdb.symhistory"
+    printLineSeparator()
+    dsql = "select 'SYMBOLS' as TableName, count(*) as NumberOfRows  from vgdb.symbols"
     df = qryMySQLDB(dsql)
     print(df)
-    dsql = "select count(*) from vgdb.symbols"
+
+    printLineSeparator()
+    dsql = "select 'SYMHISTORY' as TableName, count(*) as NumberOfRows from vgdb.symhistory"
     df = qryMySQLDB(dsql)
     print(df)
-    dsql = "select count(*) from vgdb.sectorweight"
+
+    printLineSeparator()
+    dsql = "select 'SECTORWEIGHT' as TableName, count(*) as NumberOfRows  from vgdb.sectorweight"
     df = qryMySQLDB(dsql)
     print(df)
+    printLineSeparator()
 
 
 def setApplicationConfig():
@@ -322,6 +342,7 @@ def setApplicationConfig():
     global mysqldb
     global mysqlhost
     global mysqlpoolsize
+    global appsymbolslist
 
 
     config = configparser.ConfigParser()
@@ -329,11 +350,14 @@ def setApplicationConfig():
     config.read('config\\vg.config')
     config.sections()
 
+    #store application configurations
     startdate = config['APPLICATION']['STARTDATE']
     stopsymbol = config['APPLICATION']['STOPSYMBOL']
     chksymbol = config['APPLICATION']['CHKSYMBOL']
     interval = config['APPLICATION']['INTERVAL']
+    appsymbolslist = config['APPLICATION']['SYMBOLSLIST'].split(',')
 
+    #store mysql database configurations
     mysqluser = config['MYSQL']['MYSQLUSER']
     mysqldb = config['MYSQL']['MYSQLDATABASE']
     mysqlhost = config['MYSQL']['MYSQLHOST']
@@ -346,7 +370,12 @@ def chkYfinance():
 
     enddate = datetime.now().strftime('%Y-%m-%d')
     dfhist = getYfinanceData(chksymbol, enddate)
+
+    printLineSeparator()
+    print("Check YFinance data for {}".format(chksymbol))
+    printLineSeparator()
     print(dfhist)
+    printLineSeparator()
 
 
 if __name__ == '__main__':
@@ -354,9 +383,9 @@ if __name__ == '__main__':
     configconnection()
     chkYfinance()
     cleanup()
-    showAggregates()
     processPickleFile()
     storeSymbols()
     storeYdata()
     calcSectorIndex()
-
+    showAggregates()
+    exit()

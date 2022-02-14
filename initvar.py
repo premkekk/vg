@@ -1,0 +1,12 @@
+connection_string = ""
+engine = ""
+startdate = ""
+stopsymbol = ""
+chksymbol = ""
+interval = ""
+mysqluser = ""
+mysqldb = ""
+mysqlhost = ""
+mysqlpoolsize = ""
+lstSyms = []
+appsymbolslist = ""
