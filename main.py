@@ -117,8 +117,12 @@ def dmlMySQLDB(sql):
             print('ERROR : Database does not exist. Please verify connection string.')
         elif error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print('ERROR : Please verify your credentials to connect to the database')
+        elif error.errno == errorcode.ER_DUP_INDEX:
+            print('WARNING : DUP VALUE ON INDEX')
+        elif error.errno == errorcode.ER_DUP_ENTRY:
+            print('WARNING : DUP VALUE ON KEY')
         else:
-            print("ERROR: Cannot connect to mysql : {} ".format(error))
+            print("ERROR: Other mysql : {} ".format(error))
     except TypeError as e:
         print(e)
         return None
@@ -152,7 +156,7 @@ def qryMySQLDB(sql):
         elif error.errno == errorcode.ER_DUP_INDEX:
             print('WARNING : DUP VALUE ON INDEX')
         else:
-            print("ERROR: Cannot connect to mysql : {} ".format(error))
+            print("ERROR: Other mysql : {} ".format(error))
     except TypeError as e:
         print(e)
         return None
