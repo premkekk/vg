@@ -1,5 +1,4 @@
 import os
-import sys
 import pickle
 
 import mysql.connector
@@ -55,6 +54,8 @@ def populateSyms(pListsyms):
     # global lstSyms
 
     for sym in pListsyms:
+        if sym == '-':
+            continue
         if not lstSyms:
             lstSyms.append(sym)
         elif sym not in lstSyms:
@@ -154,7 +155,7 @@ def qryMySQLDB(sql):
         elif error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print('ERROR : Please verify your credentials to connect to the database')
         elif error.errno == errorcode.ER_DUP_INDEX:
-            print('WARNING : DUP VALUE ON INDEX')
+            # print('WARNING : DUP VALUE ON INDEX')
         else:
             print("ERROR: Other mysql : {} ".format(error))
     except TypeError as e:
@@ -173,6 +174,7 @@ def storeSymbols():
     print("INFO: About to store symbols data : {}".format(len(lstSyms)))
     lstSyms.sort()
 
+    # TODO : Doing this one at a time slows down. Need to implement batch ticker list querying to yfinance
     for sym in lstSyms:
 
         ydata = yf.Ticker(sym)
@@ -194,8 +196,7 @@ def storeSymbols():
         else:
             yquotetype = "N/A"
 
-        insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + str(
-            ysector) + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
+        insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + ysector + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
         # print(insert_query)
         dmlMySQLDB(insert_query)
 
@@ -237,6 +238,7 @@ def storeYdata():
     else:
         lstSymsN = lstSyms
 
+    # TODO : Doing this one at a time slows down. Need to implement batch ticker list querying to yfinance
     for sym in lstSymsN:
         if sym == stopsymbol:
             break
