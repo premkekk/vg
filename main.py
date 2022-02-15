@@ -155,7 +155,7 @@ def qryMySQLDB(sql):
         elif error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print('ERROR : Please verify your credentials to connect to the database')
         elif error.errno == errorcode.ER_DUP_INDEX:
-            # print('WARNING : DUP VALUE ON INDEX')
+            print('WARNING : DUP VALUE ON INDEX')
         else:
             print("ERROR: Other mysql : {} ".format(error))
     except TypeError as e:
@@ -164,6 +164,56 @@ def qryMySQLDB(sql):
     except ValueError as e:
         print(e)
         return None
+
+
+def batchstoreSymbols():
+    # Stores data into SYMBOLS table
+    # Fetches symbol info from yfinance (sym.info) and stores in table SYMBOLS
+    # This symbols info data can later be used for many computations
+
+    print("INFO: About to store symbols data : {}".format(len(lstSyms)))
+    lstSyms.sort()
+
+    i = 0
+    symstr = ""
+    for sym in lstSyms:
+        if sym == '-':
+            continue
+        if i < 100:
+            i += 1
+            symstr += " " + sym
+            continue
+
+        print(symstr)
+
+        ydata = yf.Tickers(symstr.strip())
+
+        for s in symstr.strip().split(" "):
+            if "sector" in ydata.tickers[s].info:
+                ysector = ydata.tickers[s].info['sector']
+            else:
+                ysector = "N/A"
+            if "volume" in ydata.tickers[s].info:
+                yvolume = ydata.tickers[s].info['volume']
+            else:
+                yvolume = 0
+            if "marketCap" in ydata.tickers[s].info:
+                ymarketcap = ydata.tickers[s].info['marketCap']
+            else:
+                ymarketcap = 0
+            if "quoteType" in ydata.tickers[s].info:
+                yquotetype = ydata.tickers[s].info['quoteType']
+            else:
+                yquotetype = "N/A"
+
+            insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + s + "','" + ysector + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
+            dmlMySQLDB(insert_query)
+
+            if s == stopsymbol:
+                break
+
+        symstr=""
+        i=0
 
 
 def storeSymbols():
@@ -364,19 +414,19 @@ def setApplicationConfig():
     config.sections()
 
     # store application configurations
-    startdate = config['APPLICATION']['STARTDATE']
-    stopsymbol = config['APPLICATION']['STOPSYMBOL']
-    chksymbol = config['APPLICATION']['CHKSYMBOL']
-    interval = config['APPLICATION']['INTERVAL']
-    appsymbolslist = config['APPLICATION']['SYMBOLSLIST'].split(',')
-    freshrun = config['APPLICATION']['FRESHRUN']
+    startdate = config['APPLICATION']['STARTDATE'].strip()
+    stopsymbol = config['APPLICATION']['STOPSYMBOL'].strip()
+    chksymbol = config['APPLICATION']['CHKSYMBOL'].strip()
+    interval = config['APPLICATION']['INTERVAL'].strip()
+    appsymbolslist = config['APPLICATION']['SYMBOLSLIST'].strip().split(',')
+    freshrun = config['APPLICATION']['FRESHRUN'].strip()
     lstSyms = []
 
     # store mysql database configurations
-    mysqluser = config['MYSQL']['MYSQLUSER']
-    mysqldb = config['MYSQL']['MYSQLDATABASE']
-    mysqlhost = config['MYSQL']['MYSQLHOST']
-    mysqlexepath = config['MYSQL']['MYSQLEXEPATH']
+    mysqluser = config['MYSQL']['MYSQLUSER'].strip()
+    mysqldb = config['MYSQL']['MYSQLDATABASE'].strip()
+    mysqlhost = config['MYSQL']['MYSQLHOST'].strip()
+    mysqlexepath = config['MYSQL']['MYSQLEXEPATH'].strip()
     mysqlpoolsize = int(config['MYSQL']['MYSQLPOOLSIZE'])
     mysqlrootpwd = utils.getrootpwd()
     rootpwdcmd = "-p" + mysqlrootpwd
@@ -562,7 +612,9 @@ if __name__ == '__main__':
 
     processPickleFile()
 
-    storeSymbols()
+    batchstoreSymbols()
+
+    #storeSymbols()
     storeYdata()
 
     calcSectorIndex()
