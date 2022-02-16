@@ -9,8 +9,8 @@ def getcrypto():
     nkey = open("crypto\\crypto_fernet.key", "rb").read()
     ntoken = open("crypto\\crypto_fernet.token", "rb").read()
 
-    print("key {}".format(nkey))
-    print("token {}".format(ntoken))
+    #print("key {}".format(nkey))
+    #print("token {}".format(ntoken))
     fn = Fernet(nkey)
     return fn.decrypt(ntoken).decode("utf-8")
 
@@ -30,11 +30,11 @@ def configconnection():
     # call get crypto
     decodedpwd = getcrypto()
 
-    print("decrypted string: ", decodedpwd)
+    #print("decrypted string: ", decodedpwd)
 
     connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
     engine = create_engine(connection_string)
 
-if __name__ == '__main__':
-    configconnection()
+    #print(connection_string)
+    #print(engine)
 

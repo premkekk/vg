@@ -2,10 +2,9 @@ USE vgdb;
 
 CREATE TABLE IF NOT EXISTS `symbols` (
   `SYMBOL` varchar(16) NOT NULL COMMENT 'Contains al symbols loaded from constituents file across all dates.',
-  `SECTOR` varchar(45) DEFAULT NULL,
-  `VOLUME` bigint(20) DEFAULT NULL,
-  `MARKETCAP` bigint(20) DEFAULT NULL,
-  `QUOTETYPE` varchar(45) DEFAULT NULL,
+  `SECTOR` varchar(45) NULL,
+  `NAME` varchar(100)  NULL,
+  `EXCHANGE` varchar(20)  NULL,
   PRIMARY KEY (`SYMBOL`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='CONTAINS SYMBOLS FROM CONSTITUENT PICKLE FILE';
 
@@ -35,11 +34,3 @@ CREATE TABLE  IF NOT EXISTS `sectorweight` (
   PRIMARY KEY (`DATE`,`SECTORNAME`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Calculate the sector distribution within the index factoring their relative weights';
 
-CREATE TABLE  IF NOT EXISTS `DUMMY` (
-  `DATE` datetime NOT NULL,
-  `SECTORNAME` varchar(100) NOT NULL,
-  `TOTALCONSTITUENTS` bigint(20) DEFAULT NULL,
-  `SECTORPRICE` double DEFAULT NULL,
-  `SECTORWINDEX` double DEFAULT NULL COMMENT 'This will be the sector weight index for that day.\nCalculated as sectorprice divided by total constituents.\n',
-  PRIMARY KEY (`DATE`,`SECTORNAME`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Calculate the sector distribution within the index factoring their relative weights';

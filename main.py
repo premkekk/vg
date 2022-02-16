@@ -17,12 +17,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 
+import loadrefdata
 import utils
 from utils import *
 import initvar
 import subprocess
+import warnings
 
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
+#TODO : replace with dbconnect.configconnection
 def configconnection():
     # Files used : config\vg.config
     # Uses this configuration settings to create mysql connection
@@ -36,6 +41,8 @@ def configconnection():
     global mysqldb
     global mysqlhost
 
+    print('CREATING CONNECTION TO MYSQL DATABASE ')
+
     config = configparser.ConfigParser()
     config.sections()
     config.read('config\\vg.config')
@@ -45,8 +52,6 @@ def configconnection():
 
     connection_string = "mysql+pymysql://%s:%s@%s/%s" % (mysqluser, decodedpwd, mysqlhost, mysqldb)
     engine = create_engine(connection_string)
-    # print(connection_string)
-    # print(engine)
 
 
 def populateSyms(pListsyms):
@@ -61,8 +66,11 @@ def populateSyms(pListsyms):
         elif sym not in lstSyms:
             lstSyms.append(sym)
 
+
 def processPickleFile():
     global appsymbolslist
+
+    print(' *** PROCESSING PICKLE FILE - TO GET ALL CONSTITUENTS *** ')
 
     pickle_inputfile = os.path.abspath("data\\constituents_history.pkl")
     pickle_file = open(pickle_inputfile, "rb")
@@ -130,6 +138,9 @@ def dmlMySQLDB(sql):
     except ValueError as e:
         print(e)
         return None
+    except Exception as e:
+        print(e)
+        return None
     finally:
         if mysqlconnection.is_connected():
             curs.close()
@@ -164,56 +175,8 @@ def qryMySQLDB(sql):
     except ValueError as e:
         print(e)
         return None
-
-
-def batchstoreSymbols():
-    # Stores data into SYMBOLS table
-    # Fetches symbol info from yfinance (sym.info) and stores in table SYMBOLS
-    # This symbols info data can later be used for many computations
-
-    print("INFO: About to store symbols data : {}".format(len(lstSyms)))
-    lstSyms.sort()
-
-    i = 0
-    symstr = ""
-    for sym in lstSyms:
-        if sym == '-':
-            continue
-        if i < 100:
-            i += 1
-            symstr += " " + sym
-            continue
-
-        print(symstr)
-
-        ydata = yf.Tickers(symstr.strip())
-
-        for s in symstr.strip().split(" "):
-            if "sector" in ydata.tickers[s].info:
-                ysector = ydata.tickers[s].info['sector']
-            else:
-                ysector = "N/A"
-            if "volume" in ydata.tickers[s].info:
-                yvolume = ydata.tickers[s].info['volume']
-            else:
-                yvolume = 0
-            if "marketCap" in ydata.tickers[s].info:
-                ymarketcap = ydata.tickers[s].info['marketCap']
-            else:
-                ymarketcap = 0
-            if "quoteType" in ydata.tickers[s].info:
-                yquotetype = ydata.tickers[s].info['quoteType']
-            else:
-                yquotetype = "N/A"
-
-            insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + s + "','" + ysector + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
-            dmlMySQLDB(insert_query)
-
-            if s == stopsymbol:
-                break
-
-        symstr=""
-        i=0
+    except Exception as e:
+        return None
 
 
 def storeSymbols():
@@ -221,37 +184,42 @@ def storeSymbols():
     # Fetches symbol info from yfinance (sym.info) and stores in table SYMBOLS
     # This symbols info data can later be used for many computations
 
-    print("INFO: About to store symbols data : {}".format(len(lstSyms)))
+    print(" *** STORING SYMBOLS - about to store symbols : {} *** ".format(len(lstSyms)))
     lstSyms.sort()
 
-    # TODO : Doing this one at a time slows down. Need to implement batch ticker list querying to yfinance
     for sym in lstSyms:
 
-        ydata = yf.Ticker(sym)
+        # TODO : Doing this one at a time slows down. Need to implement batch ticker list querying to yfinance
+        #        Takes about a minute for each symbol
+        #        Tried to do in batch as well
+        #        TEMPORARY SOLUTION : Downloaded Symbol sector information from yahoo finance and using this as a reference data file
+        #        This is done one time using refdata.sh script
+        #        We use this table to populate sector information instead
 
-        if "sector" in ydata.info:
-            ysector = ydata.info['sector']
-        else:
-            ysector = "N/A"
-        if "volume" in ydata.info:
-            yvolume = ydata.info['volume']
-        else:
-            yvolume = 0
-        if "marketCap" in ydata.info:
-            ymarketcap = ydata.info['marketCap']
-        else:
-            ymarketcap = 0
-        if "quoteType" in ydata.info:
-            yquotetype = ydata.info['quoteType']
-        else:
-            yquotetype = "N/A"
+        #ydata = yf.Ticker(sym)
 
-        insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + ysector + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
+        # if "sector" in ydata.info:
+        #     ysector = ydata.info['sector']
+        # else:
+        #     ysector = "N/A"
+        # if "volume" in ydata.info:
+        #     yvolume = ydata.info['volume']
+        # else:
+        #     yvolume = 0
+        # if "marketCap" in ydata.info:
+        #     ymarketcap = ydata.info['marketCap']
+        # else:
+        #     ymarketcap = 0
+        # if "quoteType" in ydata.info:
+        #     yquotetype = ydata.info['quoteType']
+        # else:
+        #     yquotetype = "N/A"
+
+        #insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, VOLUME, MARKETCAP, QUOTETYPE) VALUES ( '" + sym + "','" + ysector + "'," + str(yvolume) + "," + str(ymarketcap) + ",'" + str(yquotetype) + "' ) "
+
+        insert_query = "INSERT INTO symbols (SYMBOL, SECTOR, NAME, EXCHANGE) SELECT ticker, Category, CompanyName, Exchange FROM refdata WHERE ticker = '" + sym + "' "
         # print(insert_query)
         dmlMySQLDB(insert_query)
-
-        if sym == stopsymbol:
-            break
 
 
 def getYfinanceData(psym, penddate):
@@ -278,6 +246,7 @@ def storeYdata():
     # Yfinance API tends to be slower, batch processing of symbols can be done if needed
 
     global lstSyms
+    print(' *** FETCHING YFinance Data and STORING IN DATABASE *** ')
 
     enddate = datetime.now().strftime('%Y-%m-%d')
 
@@ -289,6 +258,7 @@ def storeYdata():
         lstSymsN = lstSyms
 
     # TODO : Doing this one at a time slows down. Need to implement batch ticker list querying to yfinance
+    #        Will raise symbols are delisted : No data found, symbol may be delisted
     for sym in lstSymsN:
         if sym == stopsymbol:
             break
@@ -318,6 +288,8 @@ def calcSectorIndex():
     # Doing equi join between symbols and symhistory tables.
 
     # First cleanup sector weight index table
+    print ('CALCULATING SECTOR INDEX')
+
     dsql = "truncate table vgdb.sectorweight"
     dmlMySQLDB(dsql)
 
@@ -348,7 +320,7 @@ def calcSectorIndex():
                " FROM vgdb.symbols s, vgdb.symhistory h" \
                " WHERE s.symbol = h.symbol" \
                " AND s.sector = '" + sector + "'" \
-                                              " GROUP BY h.HISTDATE, s.SECTOR"
+               " GROUP BY h.HISTDATE, s.SECTOR"
         dmlMySQLDB(isql)
 
 
@@ -359,6 +331,7 @@ def cleanup():
     global freshrun
 
     if freshrun == "Y":
+        print(' *** PERFORMING CLEANUP *** ')
         dsql = "truncate table vgdb.symhistory"
         dmlMySQLDB(dsql)
         dsql = "truncate table vgdb.symbols"
@@ -370,6 +343,8 @@ def cleanup():
 def showAggregates():
     # Shows aggregates for all tables
     # Quick view of data
+
+    print(' *** DISPLAY AGGREGATES *** ')
 
     printLineSeparator()
     dsql = "select 'SYMBOLS' as TableName, count(*) as NumberOfRows  from vgdb.symbols"
@@ -408,6 +383,8 @@ def setApplicationConfig():
     global freshrun
     global lstSyms
 
+    print(' *** SETTING APPLICATION CONFIG *** ')
+
     config = configparser.ConfigParser()
     config.sections()
     config.read('config\\vg.config')
@@ -445,6 +422,8 @@ def createDatabase():
     global lstrootcommand
     global mysqlrootpwd
 
+    print(' *** CREATING DATABASE *** ')
+
     try:
         mysqlconnection = mysql.connector.connect(
             host=mysqlhost,
@@ -472,6 +451,8 @@ def createDatabase():
     except ValueError as e:
         print(e)
         return None
+    except Exception as e:
+        return None
     finally:
         if mysqlconnection.is_connected():
             curs.close()
@@ -491,12 +472,15 @@ def createUser():
     global lstrootcommand
     global mysqlrootpwd
 
+    print(' *** CREATING USER *** ')
+
     try:
         mysqlconnection = mysql.connector.connect(
             host=mysqlhost,
             user="root",
             password=mysqlrootpwd
         )
+        mysqlconnection.raise_on_warnings = True
         curs = mysqlconnection.cursor(dictionary=True)
         curs.execute("select user from mysql.user")
 
@@ -504,7 +488,8 @@ def createUser():
             if x["user"] == mysqluser:
                 print("Skipping creating user '{}' as it already exists".format(mysqluser))
                 return
-
+    except mysql.Warning as w:
+        i=0
     except mysql.connector.Error as error:
         if error.errno == errorcode.ER_BAD_DB_ERROR:
             print('ERROR : Database does not exist. Please verify connection string.')
@@ -517,6 +502,8 @@ def createUser():
         return None
     except ValueError as e:
         print(e)
+        return None
+    except Exception as e:
         return None
     finally:
         if mysqlconnection.is_connected():
@@ -537,12 +524,16 @@ def createTables():
     global mysqlexepath
     global lstrootcommand
 
+    print(' *** CREATING TABLES *** ')
+
     with open('sqlscripts/createTables.sql') as input_file:
         result = subprocess.run(lstrootcommand, stdin=input_file, capture_output=True)
         print(result)
 
 
 def showgraph():
+    print(' *** SHOW 2D GRAPH *** ')
+
     # , SECTORWINDEX, TOTALCONSTITUENTS
     sql = " SELECT DATE, COUNT(SECTORNAME) AS SECTORNAME, SUM(SECTORWINDEX)  as SECTORWINDEX, SUM(TOTALCONSTITUENTS) AS TOTALCONSTITUENTS " \
           " FROM SECTORWEIGHT " \
@@ -569,6 +560,8 @@ def showgraph():
 
 
 def show3dgraph():
+    print(' *** SHOW 3D GRAPH *** ')
+
     sql = " SELECT left(DATE,10) as DATE, SECTORNAME, SECTORWINDEX " \
           " FROM SECTORWEIGHT " \
           " ORDER BY 1 DESC"
@@ -599,6 +592,7 @@ def show3dgraph():
 
 
 if __name__ == '__main__':
+    loadrefdata.main()
 
     setApplicationConfig()
 
@@ -612,9 +606,8 @@ if __name__ == '__main__':
 
     processPickleFile()
 
-    batchstoreSymbols()
+    storeSymbols()
 
-    #storeSymbols()
     storeYdata()
 
     calcSectorIndex()
