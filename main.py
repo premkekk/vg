@@ -87,7 +87,6 @@ def processPickleFile():
                 populateSyms(l_listsymbols)
                 # symAssetClass=list(map(itemgetter(3), symDataList))
                 # print("Row:{} ; Date:{}; Symbols:{}; AssetClass :{}".format( r, row[0], syms, symAssetClass ) )
-                # datetime.strptime(row[0],'%Y-%m-%d %H:%M:%S')
     else:
         populateSyms(appsymbolslist)
 
@@ -340,29 +339,6 @@ def cleanup():
         dmlMySQLDB(dsql)
 
 
-def showAggregates():
-    # Shows aggregates for all tables
-    # Quick view of data
-
-    print(' *** DISPLAY AGGREGATES *** ')
-
-    printLineSeparator()
-    dsql = "select 'SYMBOLS' as TableName, count(*) as NumberOfRows  from vgdb.symbols"
-    df = qryMySQLDB(dsql)
-    print(df)
-
-    printLineSeparator()
-    dsql = "select 'SYMHISTORY' as TableName, count(*) as NumberOfRows from vgdb.symhistory"
-    df = qryMySQLDB(dsql)
-    print(df)
-
-    printLineSeparator()
-    dsql = "select 'SECTORWEIGHT' as TableName, count(*) as NumberOfRows  from vgdb.sectorweight"
-    df = qryMySQLDB(dsql)
-    print(df)
-    printLineSeparator()
-
-
 def setApplicationConfig():
     # Reads configuration from config\vg.config file
     # Sets configuration for application
@@ -531,7 +507,30 @@ def createTables():
         print(result)
 
 
-def showgraph():
+def displayAggregates():
+    # Shows aggregates for all tables
+    # Quick view of data
+
+    print(' *** DISPLAY AGGREGATES *** ')
+
+    printLineSeparator()
+    dsql = "select 'SYMBOLS' as TableName, count(*) as NumberOfRows  from vgdb.symbols"
+    df = qryMySQLDB(dsql)
+    print(df)
+
+    printLineSeparator()
+    dsql = "select 'SYMHISTORY' as TableName, count(*) as NumberOfRows from vgdb.symhistory"
+    df = qryMySQLDB(dsql)
+    print(df)
+
+    printLineSeparator()
+    dsql = "select 'SECTORWEIGHT' as TableName, count(*) as NumberOfRows  from vgdb.sectorweight"
+    df = qryMySQLDB(dsql)
+    print(df)
+    printLineSeparator()
+
+
+def sample2dgraph():
     print(' *** SHOW 2D GRAPH *** ')
 
     # , SECTORWINDEX, TOTALCONSTITUENTS
@@ -543,26 +542,55 @@ def showgraph():
     df = df.reset_index()
 
     lstDt = df['DATE'].tolist()
-    lstSec = df['SECTORNAME'].tolist()
     lstSecWIndex = df['SECTORWINDEX'].tolist()
-    lstConstituents = df['TOTALCONSTITUENTS'].tolist()
 
     plt.plot(lstDt, lstSecWIndex, label="Sector Weighted Index")
-
-    plt.plot(lstDt, lstSec, label="Sectors")
-
-    plt.plot(lstDt, lstConstituents, label="Total Constituents")
+    #plt.plot(lstDt, lstSec, label="Sectors")
+    #plt.plot(lstDt, lstConstituents, label="Total Constituents")
 
     plt.xlabel('x - date')
-    plt.ylabel('y - axis')
+    plt.ylabel('y - sector weighted index')
     plt.legend()
     plt.show()
 
 
-def show3dgraph():
+def sampleSymgraph():
+    print(' *** SHOW Sample Symbol GRAPH *** ')
+    global chksymbol
+    global startdate
+
+    sql = " SELECT SYMBOL, HISTDATE, ROUND(OPENPRICE,2) as OPENPRICE, ROUND(CLOSEPRICE,2) as CLOSEPRICE, " \
+          " ROUND(HIGHPRICE,2) as HIGHPRICE, ROUND(LOWPRICE,2) AS LOWPRICE, VOLUME " \
+          " FROM symhistory " \
+          " WHERE symbol = '" + chksymbol + "' and histdate > '" + startdate + "'"
+
+    df = qryMySQLDB(sql)
+    df = df.reset_index()
+
+    lstDt = df['HISTDATE'].tolist()
+    lstOP = df['OPENPRICE'].tolist()
+    plt.plot(lstDt, lstOP, label="Open Price")
+
+    lstCP = df['CLOSEPRICE'].to_list()
+    plt.plot(lstDt, lstCP, label="Close Price")
+
+    lstCP = df['HIGHPRICE'].to_list()
+    plt.plot(lstDt, lstCP, label="High Price")
+
+    lstCP = df['LOWPRICE'].to_list()
+    plt.plot(lstDt, lstCP, label="Low Price")
+
+    plt.xlabel('x - Date')
+    plt.ylabel('y - Price')
+
+    plt.legend()
+    plt.show()
+
+
+def sample3dgraph():
     print(' *** SHOW 3D GRAPH *** ')
 
-    sql = " SELECT left(DATE,10) as DATE, SECTORNAME, SECTORWINDEX " \
+    sql = " SELECT SECTORNAME as DATE, TOTALCONSTITUENTS, SECTORWINDEX " \
           " FROM SECTORWEIGHT " \
           " ORDER BY 1 DESC"
 
@@ -570,7 +598,7 @@ def show3dgraph():
     # df = df.reset_index()
 
     lstDt = df['DATE'].tolist()
-    lstSec = df['SECTORNAME'].tolist()
+    lstSec = df['TOTALCONSTITUENTS'].tolist()
     lstSecWIndex = df['SECTORWINDEX'].tolist()
 
     fig = plt.figure()
@@ -592,6 +620,7 @@ def show3dgraph():
 
 
 if __name__ == '__main__':
+
     loadrefdata.main()
 
     setApplicationConfig()
@@ -612,8 +641,9 @@ if __name__ == '__main__':
 
     calcSectorIndex()
 
-    showAggregates()
-    showgraph()
-    show3dgraph()
+    displayAggregates()
+    sample2dgraph()
+    sample3dgraph()
+    sampleSymgraph()
 
     exit()
