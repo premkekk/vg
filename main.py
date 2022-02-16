@@ -331,6 +331,8 @@ def cleanup():
 
     if freshrun == "Y":
         print(' *** PERFORMING CLEANUP *** ')
+        dsql = "truncate table vgdb.refdata"
+        dmlMySQLDB(dsql)
         dsql = "truncate table vgdb.symhistory"
         dmlMySQLDB(dsql)
         dsql = "truncate table vgdb.symbols"
@@ -640,7 +642,7 @@ if __name__ == '__main__':
     configconnection()
 
     # cleans up tables, if FRESHRUN=Y in config/vg.config
-    cleanup()
+    #cleanup()
 
     # loads constituents from pickle file. Given pickle file is stored in data/constituents_history.pkl file
     processPickleFile()

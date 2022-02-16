@@ -1,0 +1,255 @@
+ *** COMPLETED LOADING REFERENCE DATA ***
+ *** SETTING APPLICATION CONFIG ***
+ *** CREATING DATABASE ***
+Skipping creating database 'vgdb' as it already exists
+ *** CREATING USER ***
+CompletedProcess(args=['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], returncode=0, stdout=b'', stderr=b'mysql: [Warning] Using a password on the command line interface can be insecure.\r\n')
+ *** CREATING TABLES ***
+CompletedProcess(args=['c:\\Program Files\\MySQL\\MySQL Server 5.7\\bin\\mysql.exe', '-uroot', '-proot'], returncode=0, stdout=b'', stderr=b'mysql: [Warning] Using a password on the command line interface can be insecure.\r\n')
+CREATING CONNECTION TO MYSQL DATABASE
+ *** PROCESSING PICKLE FILE - TO GET ALL CONSTITUENTS ***
+ *** STORING SYMBOLS - about to store symbols : 1511 ***
+ *** FETCHING YFinance Data and STORING IN DATABASE ***
+- AAXN: No data found, symbol may be delisted
+- ACXM: No data found for this date range, symbol may be delisted
+- AET: No data found for this date range, symbol may be delisted
+- AFSI: No data found for this date range, symbol may be delisted
+- AGN: No data found, symbol may be delisted
+- AHL: No data found for this date range, symbol may be delisted
+- AKRX: No data found, symbol may be delisted
+- ALXN: No data found, symbol may be delisted
+- ANDV: No data found for this date range, symbol may be delisted
+- APC: No data found, symbol may be delisted
+- APY: No data found, symbol may be delisted
+- ARRS: No data found, symbol may be delisted
+- ATH: No data found for this date range, symbol may be delisted
+- ATHN: No data found for this date range, symbol may be delisted
+- ATU: No data found, symbol may be delisted
+- AVP: No data found, symbol may be delisted
+- AXE: No data found, symbol may be delisted
+- BBT: No data found, symbol may be delisted
+- BFA: No data found, symbol may be delisted
+- BFB: No data found, symbol may be delisted
+- BHGE: No data found, symbol may be delisted
+- BID: No data found, symbol may be delisted
+- BIVV: No data found for this date range, symbol may be delisted
+- BLKFDS: No data found, symbol may be delisted
+- BMS: No data found for this date range, symbol may be delisted
+- BRKB: No data found, symbol may be delisted
+- BWLD: No data found for this date range, symbol may be delisted
+- BXS: No data found, symbol may be delisted
+- CA: No data found for this date range, symbol may be delisted
+- CAA: No data found for this date range, symbol may be delisted
+- CAVM: No data found for this date range, symbol may be delisted
+- CBG: No data found for this date range, symbol may be delisted
+- CBS: No data found, symbol may be delisted
+- CBSA: No data found for this date range, symbol may be delisted
+- CELG: No data found, symbol may be delisted
+- CHFC: No data found, symbol may be delisted
+- CLGX: No data found, symbol may be delisted
+- CLI: No data found, symbol may be delisted
+- CLNS: No data found for this date range, symbol may be delisted
+- CLNY: No data found, symbol may be delisted
+- CMD: No data found, symbol may be delisted
+- COG: No data found, symbol may be delisted
+- COL: No data found for this date range, symbol may be delisted
+- COR: No data found for this date range, symbol may be delisted
+- CPN: No data found for this date range, symbol may be delisted
+- CREE: No data found, symbol may be delisted
+- CSRA: No data found for this date range, symbol may be delisted
+- CTB: No data found, symbol may be delisted
+- CTL: No data found, symbol may be delisted
+- CVA: No data found, symbol may be delisted
+- CXO: No data found, symbol may be delisted
+- CXP: No data found, symbol may be delisted
+- CY: No data found, symbol may be delisted
+- DATA: No data found, symbol may be delisted
+- DDR: No data found for this date range, symbol may be delisted
+- DF: No data found, symbol may be delisted
+- DISHR: No data found, symbol may be delisted
+- DLPH: No data found, symbol may be delisted
+- DNKN: No data found, symbol may be delisted
+- DPS: No data found for this date range, symbol may be delisted
+- DST: No data found for this date range, symbol may be delisted
+- DVMT: No data found for this date range, symbol may be delisted
+- DWDP: No data found, symbol may be delisted
+- DYAX: No data found for this date range, symbol may be delisted
+- EE: No data found, symbol may be delisted
+- EFII: No data found, symbol may be delisted
+- EGN: No data found for this date range, symbol may be delisted
+- ELLI: No data found, symbol may be delisted
+- ESH0: No data found, symbol may be delisted
+- ESH1: No data found, symbol may be delisted
+- ESL: No data found, symbol may be delisted
+- ESM0: No data found, symbol may be delisted
+- ESM1: No data found, symbol may be delisted
+- ESRX: No data found for this date range, symbol may be delisted
+- ESU0: No data found, symbol may be delisted
+- ESU1: No data found, symbol may be delisted
+- ESU9: No data found, symbol may be delisted
+- ESV: No data found, symbol may be delisted
+- ESZ0: No data found, symbol may be delisted
+- ESZ9: No data found, symbol may be delisted
+- ETFC: No data found, symbol may be delisted
+- EV: No data found, symbol may be delisted
+- EVHC: No data found for this date range, symbol may be delisted
+- FCEA: No data found, symbol may be delisted
+- FDC: No data found, symbol may be delisted
+- FEYE: No data found, symbol may be delisted
+- FII: No data found, symbol may be delisted
+- FLIR: No data found, symbol may be delisted
+- FNGN: No data found, symbol may be delisted
+- FNSR: No data found, symbol may be delisted
+- GDI: No data found, symbol may be delisted
+- GGP: No data found for this date range, symbol may be delisted
+- GLIBA: No data found, symbol may be delisted
+- GPT: No data found for this date range, symbol may be delisted
+- GRA: No data found, symbol may be delisted
+- GWR: No data found, symbol may be delisted
+- GXP: No data found for this date range, symbol may be delisted
+- HBHC: No data found for this date range, symbol may be delisted
+- HCN: No data found for this date range, symbol may be delisted
+- HDS: No data found, symbol may be delisted
+- HEIA: No data found, symbol may be delisted
+- HPT: No data found, symbol may be delisted
+- HRC: No data found, symbol may be delisted
+- HRS: No data found, symbol may be delisted
+- HYH: No data found for this date range, symbol may be delisted
+- IBKC: No data found, symbol may be delisted
+- IDTI: No data found, symbol may be delisted
+- IMMU: No data found, symbol may be delisted
+- IPHI: No data found, symbol may be delisted
+- IPXL: No data found for this date range, symbol may be delisted
+- JCOM: No data found, symbol may be delisted
+- JCP: No data found, symbol may be delisted
+- JEC: No data found, symbol may be delisted
+- JUNO: No data found for this date range, symbol may be delisted
+- JWA: No data found, symbol may be delisted
+- KLXI: No data found for this date range, symbol may be delisted
+- KORS: No data found for this date range, symbol may be delisted
+- KSU: No data found, symbol may be delisted
+- LB: No data found, symbol may be delisted
+- LENB: No data found, symbol may be delisted
+- LEXEA: No data found, symbol may be delisted
+- LGFA: No data found, symbol may be delisted
+- LGFB: No data found, symbol may be delisted
+- LHO: No data found for this date range, symbol may be delisted
+- LM: No data found, symbol may be delisted
+- LNCE: No data found for this date range, symbol may be delisted
+- LOGM: No data found, symbol may be delisted
+- LOXO: No data found, symbol may be delisted
+- LPNT: No data found for this date range, symbol may be delisted
+- LPT: No data found, symbol may be delisted
+- LSXMR: No data found, symbol may be delisted
+- LUK: No data found for this date range, symbol may be delisted
+- LVNTA: No data found for this date range, symbol may be delisted
+- MBFI: No data found, symbol may be delisted
+- MDCO: No data found, symbol may be delisted
+- MDP: No data found for this date range, symbol may be delisted
+- MDSO: No data found, symbol may be delisted
+- MIK: No data found, symbol may be delisted
+- MLHR: No data found, symbol may be delisted
+- MNK: No data found, symbol may be delisted
+- MOGA: No data found, symbol may be delisted
+- MSCC: No data found for this date range, symbol may be delisted
+- MSG: No data found, symbol may be delisted
+- MXIM: No data found, symbol may be delisted
+- MYL: No data found, symbol may be delisted
+- NAV: No data found, symbol may be delisted
+- NBL: No data found, symbol may be delisted
+- NFX: No data found for this date range, symbol may be delisted
+- OA: No data found for this date range, symbol may be delisted
+- OXY WS WI: No data found, symbol may be delisted
+- OZRK: No data found, symbol may be delisted
+- P: No data found for this date range, symbol may be delisted
+- PAH: No data found for this date range, symbol may be delisted
+- PCLN: No data found for this date range, symbol may be delisted
+- PE: No data found, symbol may be delisted
+- PF: No data found for this date range, symbol may be delisted
+- PFPT: No data found, symbol may be delisted
+- PLT: No data found, symbol may be delisted
+- POL: No data found, symbol may be delisted
+- PPD: No data found, symbol may be delisted
+- PRAH: No data found, symbol may be delisted
+- PRSP: No data found, symbol may be delisted
+- PS: No data found, symbol may be delisted
+- PTLA: No data found, symbol may be delisted
+- QCP: No data found for this date range, symbol may be delisted
+- QEP: No data found, symbol may be delisted
+- QVCA: No data found for this date range, symbol may be delisted
+- RBC: No data found, symbol may be delisted
+- RDC: No data found, symbol may be delisted
+- RHT: No data found, symbol may be delisted
+- RP: No data found, symbol may be delisted
+- RPAI: No data found, symbol may be delisted
+- RSPP: No data found for this date range, symbol may be delisted
+- RTN: No data found, symbol may be delisted
+- SCG: No data found for this date range, symbol may be delisted
+- SEMG: No data found, symbol may be delisted
+- SERV: No data found, symbol may be delisted
+- SFLY: No data found, symbol may be delisted
+- SMTA: No data found, symbol may be delisted
+- SNH: No data found, symbol may be delisted
+- SNI: No data found for this date range, symbol may be delisted
+- SPN: No data found, symbol may be delisted
+- STAY: No data found, symbol may be delisted
+- STI: No data found, symbol may be delisted
+- STMP: No data found, symbol may be delisted
+- SYMC: No data found, symbol may be delisted
+- TCF: No data found, symbol may be delisted
+- TCO: No data found, symbol may be delisted
+- TECD: No data found, symbol may be delisted
+- TIF: No data found, symbol may be delisted
+- TMK: No data found, symbol may be delisted
+- TMUSR: No data found, symbol may be delisted
+- TRCO: No data found, symbol may be delisted
+- TSRO: No data found for this date range, symbol may be delisted
+- TSS: No data found, symbol may be delisted
+- TWX: No data found for this date range, symbol may be delisted
+- UBNT: No data found, symbol may be delisted
+- UFS: No data found, symbol may be delisted
+- ULTI: No data found, symbol may be delisted
+- USG: No data found, symbol may be delisted
+- UTX: No data found, symbol may be delisted
+- VAR: No data found, symbol may be delisted
+- VER: No data found, symbol may be delisted
+- VIAB: No data found, symbol may be delisted
+- VR: No data found for this date range, symbol may be delisted
+- VSM: No data found, symbol may be delisted
+- WBC: No data found, symbol may be delisted
+- WCG: No data found, symbol may be delisted
+- WDR: No data found, symbol may be delisted
+- WFFUT: No data found, symbol may be delisted
+- WFT: No data found, symbol may be delisted
+- WGL: No data found for this date range, symbol may be delisted
+- WORK: No data found, symbol may be delisted
+- WP: No data found, symbol may be delisted
+- WPG: No data found, symbol may be delisted
+- WPX: No data found, symbol may be delisted
+- WR: No data found for this date range, symbol may be delisted
+- WRI: No data found, symbol may be delisted
+- WTR: No data found, symbol may be delisted
+- WYN: No data found for this date range, symbol may be delisted
+- WYND: No data found, symbol may be delisted
+- XEC: No data found, symbol may be delisted
+- XLRN: No data found, symbol may be delisted
+- XON: No data found, symbol may be delisted
+- XTSLA: No data found, symbol may be delisted
+- ZAYO: No data found, symbol may be delisted
+CALCULATING SECTOR INDEX
+ *** DISPLAY AGGREGATES ***
+-------------------------------------------------------------------------------------------------------------------------------------
+  TableName  NumberOfRows
+0   SYMBOLS          1221
+-------------------------------------------------------------------------------------------------------------------------------------
+    TableName  NumberOfRows
+0  SYMHISTORY         39739
+-------------------------------------------------------------------------------------------------------------------------------------
+      TableName  NumberOfRows
+0  SECTORWEIGHT          5703
+-------------------------------------------------------------------------------------------------------------------------------------
+ *** SHOW 2D GRAPH ***
+ *** SHOW 3D GRAPH ***
+ *** SHOW Sample Symbol GRAPH ***
+
+Process finished with exit code 0
