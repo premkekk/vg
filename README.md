@@ -1,4 +1,4 @@
-# Vanguard YFinance Code
+# VG YFinance Code
 
 <table border=1 cellpadding=10>
 <tr>
