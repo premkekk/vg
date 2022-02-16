@@ -4,6 +4,7 @@ from cryptography.fernet import Fernet
 key = Fernet.generate_key()
 f = Fernet(key)
 #encrypt message and generate token message
+#create token files for root and mysql user "vguser"
 token = f.encrypt(b"root")
 print(key)
 print(token)
